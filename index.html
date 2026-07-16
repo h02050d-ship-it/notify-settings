@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f766e">
+<title>社内通知 設定</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f766e'/%3E%3Ctext x='32' y='46' font-size='40' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'%3E通%3C/text%3E%3C/svg%3E">
+<style>
+  :root{ --bg:#f1f5f9; --card:#fff; --ink:#0f172a; --sub:#64748b; --line:#e2e8f0;
+         --teal:#0f766e; --teal2:#0d9488; --red:#e11d48; --amber:#b45309; }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body{ margin:0; font-family:-apple-system,"Segoe UI",Roboto,"Helvetica Neue","Noto Sans JP",sans-serif;
+        background:var(--bg); color:var(--ink); line-height:1.6; }
+  header{ position:sticky; top:0; z-index:5; background:var(--teal);
+          color:#fff; padding:14px 16px calc(14px + env(safe-area-inset-bottom,0)); }
+  header .t{ font-size:18px; font-weight:800; letter-spacing:.02em; }
+  header .s{ font-size:12px; opacity:.85; margin-top:2px; }
+  .wrap{ max-width:760px; margin:0 auto; padding:14px 12px 120px; }
+
+  /* ===== ログインゲート ===== */
+  #gate{ position:fixed; inset:0; z-index:50; background:linear-gradient(160deg,#0f766e,#134e4a);
+         display:flex; align-items:center; justify-content:center; padding:20px; }
+  #gate .box{ width:100%; max-width:340px; background:#fff; border-radius:18px; padding:24px 20px;
+              box-shadow:0 20px 50px rgba(0,0,0,.3); }
+  #gate h1{ margin:0 0 4px; font-size:19px; text-align:center; }
+  #gate p{ margin:0 0 18px; font-size:12px; color:var(--sub); text-align:center; }
+  #gate input{ width:100%; padding:12px 14px; margin-bottom:10px; border:1.5px solid var(--line);
+               border-radius:10px; font-size:16px; }
+  #gate .row{ display:flex; align-items:center; gap:6px; font-size:12px; color:var(--sub); margin:2px 2px 14px; }
+  #gate button{ width:100%; padding:13px; border:0; border-radius:10px; background:var(--teal);
+                color:#fff; font-size:16px; font-weight:700; }
+  #gate .err{ color:var(--red); font-size:12.5px; text-align:center; min-height:18px; margin-bottom:8px; }
+
+  .hint{ background:#ecfdf5; border:1px solid #a7f3d0; color:#065f46; border-radius:12px;
+         padding:11px 13px; font-size:12.5px; margin-bottom:14px; }
+  .hint b{ color:#047857; }
+
+  .card{ background:var(--card); border:1px solid var(--line); border-radius:16px;
+         padding:14px 14px 16px; margin-bottom:14px; box-shadow:0 1px 2px rgba(0,0,0,.04); }
+  .chead{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
+  .who{ font-size:17px; font-weight:800; }
+  .who small{ font-weight:600; color:var(--sub); font-size:12px; margin-left:6px; }
+
+  /* master switch */
+  .sw{ position:relative; display:inline-block; width:50px; height:29px; flex:0 0 auto; }
+  .sw input{ display:none; }
+  .sw .t{ position:absolute; inset:0; background:#cbd5e1; border-radius:999px; transition:.18s; }
+  .sw .t:before{ content:""; position:absolute; width:23px; height:23px; left:3px; top:3px;
+                 background:#fff; border-radius:50%; transition:.18s; box-shadow:0 1px 3px rgba(0,0,0,.3); }
+  .sw input:checked + .t{ background:var(--teal2); }
+  .sw input:checked + .t:before{ transform:translateX(21px); }
+
+  .master-off{ opacity:.45; }
+  .types{ display:flex; flex-wrap:wrap; gap:8px; }
+  .chip{ display:inline-flex; align-items:center; gap:7px; border:1.5px solid var(--line);
+         border-radius:999px; padding:7px 12px 7px 10px; font-size:13px; cursor:pointer; user-select:none;
+         background:#f8fafc; transition:.12s; }
+  .chip .dot{ width:16px; height:16px; border-radius:50%; border:2px solid #cbd5e1; flex:0 0 auto; }
+  .chip.on{ background:#ecfdf5; border-color:#5eead4; color:#0f766e; font-weight:700; }
+  .chip.on .dot{ background:var(--teal2); border-color:var(--teal2); box-shadow:inset 0 0 0 2px #fff; }
+  .chip.off{ color:var(--sub); }
+
+  .memo-l{ font-size:12px; color:var(--sub); margin:13px 2px 5px; display:flex; justify-content:space-between; }
+  textarea{ width:100%; border:1.5px solid var(--line); border-radius:10px; padding:10px 12px;
+            font-size:14px; font-family:inherit; resize:vertical; min-height:52px; }
+  .applied{ font-size:11.5px; color:var(--amber); margin-top:6px; background:#fffbeb;
+            border:1px solid #fde68a; border-radius:8px; padding:6px 9px; display:none; }
+  .applied.show{ display:block; }
+
+  /* save bar */
+  #bar{ position:fixed; left:0; right:0; bottom:0; z-index:8; padding:12px 12px calc(12px + env(safe-area-inset-bottom,0));
+        background:linear-gradient(#ffffff00,#fff 30%); display:flex; gap:10px; justify-content:center; }
+  #bar .inner{ max-width:760px; width:100%; display:flex; gap:10px; align-items:center; }
+  #save{ flex:1; padding:14px; border:0; border-radius:12px; background:var(--teal); color:#fff;
+         font-size:16px; font-weight:800; box-shadow:0 6px 16px rgba(15,118,110,.35); }
+  #save:disabled{ background:#94a3b8; box-shadow:none; }
+  #status{ font-size:12px; color:var(--sub); min-width:64px; text-align:right; }
+  .dirty #save{ background:var(--red); box-shadow:0 6px 16px rgba(225,29,72,.35); }
+  .toast{ position:fixed; left:50%; bottom:78px; transform:translateX(-50%); background:#0f172a; color:#fff;
+          padding:10px 16px; border-radius:999px; font-size:13px; opacity:0; transition:.25s; z-index:20; pointer-events:none; }
+  .toast.show{ opacity:.95; }
+</style>
+</head>
+<body>
+
+<!-- ログインゲート -->
+<div id="gate">
+  <div class="box">
+    <h1>社内通知 設定</h1>
+    <p>林材木店 社内ツール（ボード共通ログイン）</p>
+    <div class="err" id="gateErr"></div>
+    <input id="gMail" type="email" placeholder="メールアドレス" autocomplete="username">
+    <input id="gPass" type="password" placeholder="パスワード" autocomplete="current-password">
+    <label class="row"><input type="checkbox" id="gKeep" checked> この端末でログインを保持する</label>
+    <button id="gBtn">ログイン</button>
+  </div>
+</div>
+
+<header>
+  <div class="t">📣 社内通知 設定</div>
+  <div class="s">誰に・どの通知を送るかをここで管理（LINE 社内通知）</div>
+</header>
+
+<div class="wrap" id="app" style="display:none">
+  <div class="hint">
+    トグルON=通知する / OFF=送らない。<b>下の「条件メモ」に文章を書くと、その人はメモ内容に沿って毎朝AIが自動でON/OFF調整</b>します（例:「金曜だけタスク通知は不要」）。メモが空の人は、上のトグルがそのまま効きます。
+  </div>
+  <div id="cards"></div>
+</div>
+
+<div id="bar" style="display:none">
+  <div class="inner">
+    <span id="status"></span>
+    <button id="save" disabled>保存</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const GAS_URL = "https://script.google.com/macros/s/AKfycby6RTCYRAmBoGa0P4QDAb0mx_NeXARoHVncQtxp2X5IXUEYW86Jy2ECS9YPqhHFvzoZ/exec";
+const CRED_KEY = "notify_creds_v1";
+const TYPES = [
+  { k:"call",   label:"現場呼出" },
+  { k:"task",   label:"タスク通知" },
+  { k:"hoiku",  label:"保育園" },
+  { k:"shaho",  label:"社保見越" },
+  { k:"molder", label:"モルダー" },
+  { k:"fax",    label:"FAX未処理" },
+  { k:"other",  label:"その他" },
+];
+const $ = id => document.getElementById(id);
+let DATA = [];      // rows from server
+let dirty = false;
+
+/* ---------- 認証 ---------- */
+function creds(){ try{ return JSON.parse(localStorage.getItem(CRED_KEY)||"{}"); }catch(e){ return {}; } }
+function saveCreds(email,pass,keep){ if(keep) localStorage.setItem(CRED_KEY, JSON.stringify({email,pass})); }
+function clearCreds(){ localStorage.removeItem(CRED_KEY); }
+function showGate(msg){ $("gate").style.display="flex"; $("gateErr").textContent=msg||""; }
+function hideGate(){ $("gate").style.display="none"; }
+
+$("gBtn").onclick = submitGate;
+["gMail","gPass"].forEach(id => $(id).addEventListener("keydown", e => { if(e.key==="Enter") submitGate(); }));
+function submitGate(){
+  const email = $("gMail").value.trim(), pass = $("gPass").value;
+  if(!email || !pass){ $("gateErr").textContent="メールとパスワードを入力してください"; return; }
+  saveCreds(email, pass, $("gKeep").checked);
+  $("gBtn").textContent="確認中…"; $("gBtn").disabled=true;
+  load(true);
+}
+
+/* ---------- 通信 ---------- */
+async function load(fromGate){
+  const c = creds();
+  if(!c.pass){ showGate(""); return; }
+  try{
+    const r = await fetch(GAS_URL + "?notify=1&pass=" + encodeURIComponent(c.pass));
+    const j = await r.json();
+    if(!j.ok){
+      if(j.error==="unauthorized"){ clearCreds(); showGate("メールまたはパスワードが違います"); }
+      else showGate("エラー: " + (j.error||"不明"));
+      $("gBtn").textContent="ログイン"; $("gBtn").disabled=false;
+      return;
+    }
+    DATA = j.settings.rows;
+    hideGate(); $("app").style.display=""; $("bar").style.display="";
+    render(); setDirty(false);
+  }catch(e){
+    showGate("接続できませんでした。通信環境を確認してください");
+    $("gBtn").textContent="ログイン"; $("gBtn").disabled=false;
+  }
+}
+
+async function save(){
+  const c = creds();
+  $("save").disabled=true; $("status").textContent="保存中…";
+  const rows = DATA.map(r => {
+    const o = { who:r.who, master:!!r.master, memo:r.memo||"" };
+    TYPES.forEach(t => o[t.k] = !!r[t.k]);
+    return o;
+  });
+  try{
+    const r = await fetch(GAS_URL, { method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"},
+      body: JSON.stringify({ action:"saveNotify", pass:c.pass, rows }) });
+    const j = await r.json();
+    if(!j.ok) throw new Error(j.error||"save");
+    DATA = j.settings.rows;
+    render(); setDirty(false); $("status").textContent="";
+    toast("✓ 保存しました");
+  }catch(e){
+    $("save").disabled=false; $("status").textContent="失敗"; toast("保存に失敗しました");
+  }
+}
+$("save").onclick = save;
+
+/* ---------- 描画 ---------- */
+function setDirty(v){ dirty=v; document.body.classList.toggle("dirty", v);
+  $("save").disabled = !v; $("status").textContent = v ? "未保存" : ""; }
+function render(){
+  const box = $("cards"); box.innerHTML="";
+  DATA.forEach((r, i) => {
+    const card = document.createElement("div"); card.className="card";
+    const chips = TYPES.map(t => {
+      const on = !!r[t.k];
+      return `<span class="chip ${on?'on':'off'}" data-i="${i}" data-k="${t.k}">
+                <span class="dot"></span>${t.label}</span>`;
+    }).join("");
+    const applied = (r.applied && String(r.applied).trim())
+      ? `<div class="applied show">🤖 ${escapeHtml(String(r.applied))}</div>` : "";
+    card.innerHTML = `
+      <div class="chead">
+        <div class="who">${escapeHtml(r.name||r.who)}<small>${r.master?'通知ON':'すべて停止中'}</small></div>
+        <label class="sw"><input type="checkbox" data-master="${i}" ${r.master?'checked':''}><span class="t"></span></label>
+      </div>
+      <div class="types ${r.master?'':'master-off'}" data-types="${i}">${chips}</div>
+      <div class="memo-l"><span>条件メモ（自由文・毎朝AIが反映）</span></div>
+      <textarea data-memo="${i}" placeholder="例）今週は楓さんのタスク通知は不要 ／ 金曜は現場呼出だけでいい">${escapeHtml(r.memo||"")}</textarea>
+      ${applied}`;
+    box.appendChild(card);
+  });
+  // handlers
+  box.querySelectorAll(".chip").forEach(el => el.onclick = () => {
+    const i = +el.dataset.i, k = el.dataset.k;
+    if(!DATA[i].master) return;         // マスターOFF中は種別いじれない
+    DATA[i][k] = !DATA[i][k]; setDirty(true); render();
+  });
+  box.querySelectorAll("[data-master]").forEach(el => el.onchange = () => {
+    const i = +el.dataset.master; DATA[i].master = el.checked; setDirty(true); render();
+  });
+  box.querySelectorAll("[data-memo]").forEach(el => el.oninput = () => {
+    DATA[+el.dataset.memo].memo = el.value; setDirty(true);
+  });
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+let toastT;
+function toast(m){ const t=$("toast"); t.textContent=m; t.classList.add("show"); clearTimeout(toastT);
+  toastT=setTimeout(()=>t.classList.remove("show"), 1900); }
+
+window.addEventListener("beforeunload", e => { if(dirty){ e.preventDefault(); e.returnValue=""; } });
+
+/* 起動：保持ログインがあれば自動ログイン */
+(function(){ const c=creds(); const m=$("gMail"); if(c.email) m.value=c.email;
+  if(c.pass) load(); else showGate(""); })();
+</script>
+</body>
+</html>
