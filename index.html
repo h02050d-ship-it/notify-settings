@@ -52,14 +52,18 @@
   .sw input:checked + .t:before{ transform:translateX(21px); }
 
   .master-off{ opacity:.45; }
-  .types{ display:flex; flex-wrap:wrap; gap:8px; }
-  .chip{ display:inline-flex; align-items:center; gap:7px; border:1.5px solid var(--line);
-         border-radius:999px; padding:7px 12px 7px 10px; font-size:13px; cursor:pointer; user-select:none;
+  .types{ display:flex; flex-direction:column; gap:8px; }
+  .trow{ display:flex; align-items:center; gap:11px; border:1.5px solid var(--line);
+         border-radius:12px; padding:10px 12px; cursor:pointer; user-select:none;
          background:#f8fafc; transition:.12s; }
-  .chip .dot{ width:16px; height:16px; border-radius:50%; border:2px solid #cbd5e1; flex:0 0 auto; }
-  .chip.on{ background:#ecfdf5; border-color:#5eead4; color:#0f766e; font-weight:700; }
-  .chip.on .dot{ background:var(--teal2); border-color:var(--teal2); box-shadow:inset 0 0 0 2px #fff; }
-  .chip.off{ color:var(--sub); }
+  .trow .dot{ width:18px; height:18px; border-radius:50%; border:2px solid #cbd5e1; flex:0 0 auto; }
+  .trow .tmeta{ flex:1; min-width:0; }
+  .trow .tname{ font-size:14px; font-weight:700; color:var(--ink); }
+  .trow .tdesc{ font-size:11.5px; color:var(--sub); margin-top:1px; line-height:1.35; }
+  .trow .tstate{ font-size:11px; font-weight:800; color:#94a3b8; letter-spacing:.05em; flex:0 0 auto; }
+  .trow.on{ background:#ecfdf5; border-color:#5eead4; }
+  .trow.on .dot{ background:var(--teal2); border-color:var(--teal2); box-shadow:inset 0 0 0 2.5px #fff; }
+  .trow.on .tstate{ color:var(--teal2); }
 
   .memo-l{ font-size:12px; color:var(--sub); margin:13px 2px 5px; display:flex; justify-content:space-between; }
   textarea{ width:100%; border:1.5px solid var(--line); border-radius:10px; padding:10px 12px;
@@ -121,13 +125,12 @@
 const GAS_URL = "https://script.google.com/macros/s/AKfycby6RTCYRAmBoGa0P4QDAb0mx_NeXARoHVncQtxp2X5IXUEYW86Jy2ECS9YPqhHFvzoZ/exec";
 const CRED_KEY = "notify_creds_v1";
 const TYPES = [
-  { k:"call",   label:"現場呼出" },
-  { k:"task",   label:"タスク通知" },
-  { k:"hoiku",  label:"保育園" },
-  { k:"shaho",  label:"社保見越" },
-  { k:"molder", label:"モルダー" },
-  { k:"fax",    label:"FAX未処理" },
-  { k:"other",  label:"その他" },
+  { k:"call",   label:"現場呼出",   desc:"加工場に「来て」とワンタップでLINE呼出" },
+  { k:"task",   label:"タスク通知", desc:"毎朝のやること＋期限超過のリマインド" },
+  { k:"shaho",  label:"社保見越",   desc:"社保引落がズレる月の仕訳リマインド（毎月25日）" },
+  { k:"molder", label:"モルダー",   desc:"モルダー刃物の使用量が未入力のとき通知" },
+  { k:"fax",    label:"FAX未処理",  desc:"未処理のFAXが残っているときの通知" },
+  { k:"other",  label:"その他",     desc:"他ツールからの汎用のお知らせ" },
 ];
 const $ = id => document.getElementById(id);
 let DATA = [];      // rows from server
@@ -203,8 +206,10 @@ function render(){
     const card = document.createElement("div"); card.className="card";
     const chips = TYPES.map(t => {
       const on = !!r[t.k];
-      return `<span class="chip ${on?'on':'off'}" data-i="${i}" data-k="${t.k}">
-                <span class="dot"></span>${t.label}</span>`;
+      return `<div class="trow ${on?'on':'off'}" data-i="${i}" data-k="${t.k}">
+                <span class="dot"></span>
+                <div class="tmeta"><div class="tname">${t.label}</div><div class="tdesc">${t.desc}</div></div>
+                <span class="tstate">${on?'ON':'OFF'}</span></div>`;
     }).join("");
     const applied = (r.applied && String(r.applied).trim())
       ? `<div class="applied show">🤖 ${escapeHtml(String(r.applied))}</div>` : "";
@@ -220,7 +225,7 @@ function render(){
     box.appendChild(card);
   });
   // handlers
-  box.querySelectorAll(".chip").forEach(el => el.onclick = () => {
+  box.querySelectorAll(".trow").forEach(el => el.onclick = () => {
     const i = +el.dataset.i, k = el.dataset.k;
     if(!DATA[i].master) return;         // マスターOFF中は種別いじれない
     DATA[i][k] = !DATA[i][k]; setDirty(true); render();
