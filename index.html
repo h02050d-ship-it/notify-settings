@@ -12,11 +12,19 @@
   *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   body{ margin:0; font-family:-apple-system,"Segoe UI",Roboto,"Helvetica Neue","Noto Sans JP",sans-serif;
         background:var(--bg); color:var(--ink); line-height:1.6; }
-  header{ position:sticky; top:0; z-index:5; background:var(--teal);
-          color:#fff; padding:14px 16px calc(14px + env(safe-area-inset-bottom,0)); }
+  header{ position:sticky; top:0; z-index:5; background:var(--teal); color:#fff; padding:13px 16px 0; }
   header .t{ font-size:18px; font-weight:800; letter-spacing:.02em; }
-  header .s{ font-size:12px; opacity:.85; margin-top:2px; }
-  .wrap{ max-width:760px; margin:0 auto; padding:14px 12px 120px; }
+  header .s{ font-size:12px; opacity:.85; margin:2px 0 10px; }
+  /* 人タブ */
+  .tabs{ display:flex; gap:4px; max-width:640px; margin:0 auto; }
+  .tab{ flex:1; text-align:center; padding:10px 4px 9px; font-size:15px; font-weight:700; color:#c7ded9;
+        border-radius:12px 12px 0 0; cursor:pointer; user-select:none; position:relative; }
+  .tab.act{ background:var(--bg); color:var(--teal); }
+  .tab .off-mark{ display:block; font-size:9.5px; font-weight:600; color:#fca5a5; line-height:1; margin-top:1px; }
+  .tab.act .off-mark{ color:var(--red); }
+  .tab .on-mark{ display:block; font-size:9.5px; font-weight:600; opacity:.75; line-height:1; margin-top:1px; }
+
+  .wrap{ max-width:640px; margin:0 auto; padding:14px 12px 120px; }
 
   /* ===== ログインゲート ===== */
   #gate{ position:fixed; inset:0; z-index:50; background:linear-gradient(160deg,#0f766e,#134e4a);
@@ -32,17 +40,12 @@
                 color:#fff; font-size:16px; font-weight:700; }
   #gate .err{ color:var(--red); font-size:12.5px; text-align:center; min-height:18px; margin-bottom:8px; }
 
-  .hint{ background:#ecfdf5; border:1px solid #a7f3d0; color:#065f46; border-radius:12px;
-         padding:11px 13px; font-size:12.5px; margin-bottom:14px; }
-  .hint b{ color:#047857; }
-
   .card{ background:var(--card); border:1px solid var(--line); border-radius:16px;
-         padding:14px 14px 16px; margin-bottom:14px; box-shadow:0 1px 2px rgba(0,0,0,.04); }
-  .chead{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
-  .who{ font-size:17px; font-weight:800; }
-  .who small{ font-weight:600; color:var(--sub); font-size:12px; margin-left:6px; }
+         padding:14px; margin-bottom:12px; box-shadow:0 1px 2px rgba(0,0,0,.04); }
+  .mrow{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .mrow .ml{ font-size:15px; font-weight:800; }
+  .mrow .ms{ font-size:11.5px; color:var(--sub); margin-top:1px; }
 
-  /* master switch */
   .sw{ position:relative; display:inline-block; width:50px; height:29px; flex:0 0 auto; }
   .sw input{ display:none; }
   .sw .t{ position:absolute; inset:0; background:#cbd5e1; border-radius:999px; transition:.18s; }
@@ -50,32 +53,49 @@
                  background:#fff; border-radius:50%; transition:.18s; box-shadow:0 1px 3px rgba(0,0,0,.3); }
   .sw input:checked + .t{ background:var(--teal2); }
   .sw input:checked + .t:before{ transform:translateX(21px); }
+  .sw.sm{ width:42px; height:25px; }
+  .sw.sm .t:before{ width:19px; height:19px; }
+  .sw.sm input:checked + .t:before{ transform:translateX(17px); }
 
-  .master-off{ opacity:.45; }
-  .types{ display:flex; flex-direction:column; gap:8px; }
-  .trow{ display:flex; align-items:center; gap:11px; border:1.5px solid var(--line);
-         border-radius:12px; padding:10px 12px; cursor:pointer; user-select:none;
-         background:#f8fafc; transition:.12s; }
-  .trow .dot{ width:18px; height:18px; border-radius:50%; border:2px solid #cbd5e1; flex:0 0 auto; }
+  .sec-l{ font-size:12px; color:var(--sub); font-weight:700; margin:16px 4px 7px; }
+  .master-off{ opacity:.45; pointer-events:none; }
+
+  .trow{ display:flex; align-items:center; gap:10px; border:1.5px solid var(--line);
+         border-radius:12px; padding:10px 10px 10px 12px; background:#f8fafc; margin-bottom:8px; }
   .trow .tmeta{ flex:1; min-width:0; }
-  .trow .tname{ font-size:14px; font-weight:700; color:var(--ink); }
+  .trow .tname{ font-size:14px; font-weight:700; }
   .trow .tdesc{ font-size:11.5px; color:var(--sub); margin-top:1px; line-height:1.35; }
-  .trow .tstate{ font-size:11px; font-weight:800; color:#94a3b8; letter-spacing:.05em; flex:0 0 auto; }
-  .trow.on{ background:#ecfdf5; border-color:#5eead4; }
-  .trow.on .dot{ background:var(--teal2); border-color:var(--teal2); box-shadow:inset 0 0 0 2.5px #fff; }
-  .trow.on .tstate{ color:var(--teal2); }
+  .trow.on{ background:#ecfdf5; border-color:#99e5d3; }
+  .trow.paused .tname{ color:var(--sub); }
+  .del{ width:30px; height:30px; border:1px solid var(--line); border-radius:9px; background:#fff;
+        color:#94a3b8; font-size:14px; display:flex; align-items:center; justify-content:center;
+        cursor:pointer; flex:0 0 auto; }
+  .del:active{ color:var(--red); border-color:var(--red); }
 
-  .memo-l{ font-size:12px; color:var(--sub); margin:13px 2px 5px; display:flex; justify-content:space-between; }
+  /* カタログ（削除済み一覧） */
+  .addbtn{ width:100%; padding:11px; border:1.5px dashed #94a3b8; border-radius:12px; background:transparent;
+           color:var(--sub); font-size:13.5px; font-weight:700; cursor:pointer; }
+  .addbtn:disabled{ opacity:.4; }
+  .cat{ margin-top:8px; border:1.5px solid var(--line); border-radius:12px; overflow:hidden; display:none; }
+  .cat.show{ display:block; }
+  .crow{ display:flex; align-items:center; gap:10px; padding:10px 12px; background:#fff; border-bottom:1px solid var(--line); }
+  .crow:last-child{ border-bottom:0; }
+  .crow .tmeta{ flex:1; min-width:0; }
+  .crow .tname{ font-size:14px; font-weight:700; color:var(--sub); }
+  .crow .tdesc{ font-size:11.5px; color:#94a3b8; margin-top:1px; line-height:1.35; }
+  .crow .add{ flex:0 0 auto; padding:7px 14px; border:0; border-radius:9px; background:var(--teal);
+              color:#fff; font-size:13px; font-weight:700; cursor:pointer; }
+  .cat .none{ padding:12px; font-size:12.5px; color:#94a3b8; text-align:center; }
+
+  .memo-l{ font-size:12px; color:var(--sub); margin:14px 2px 5px; }
   textarea{ width:100%; border:1.5px solid var(--line); border-radius:10px; padding:10px 12px;
             font-size:14px; font-family:inherit; resize:vertical; min-height:52px; }
   .applied{ font-size:11.5px; color:var(--amber); margin-top:6px; background:#fffbeb;
-            border:1px solid #fde68a; border-radius:8px; padding:6px 9px; display:none; }
-  .applied.show{ display:block; }
+            border:1px solid #fde68a; border-radius:8px; padding:6px 9px; }
 
-  /* save bar */
   #bar{ position:fixed; left:0; right:0; bottom:0; z-index:8; padding:12px 12px calc(12px + env(safe-area-inset-bottom,0));
-        background:linear-gradient(#ffffff00,#fff 30%); display:flex; gap:10px; justify-content:center; }
-  #bar .inner{ max-width:760px; width:100%; display:flex; gap:10px; align-items:center; }
+        background:linear-gradient(#ffffff00,#fff 30%); }
+  #bar .inner{ max-width:640px; margin:0 auto; display:flex; gap:10px; align-items:center; }
   #save{ flex:1; padding:14px; border:0; border-radius:12px; background:var(--teal); color:#fff;
          font-size:16px; font-weight:800; box-shadow:0 6px 16px rgba(15,118,110,.35); }
   #save:disabled{ background:#94a3b8; box-shadow:none; }
@@ -103,15 +123,11 @@
 
 <header>
   <div class="t">📣 社内通知 設定</div>
-  <div class="s">誰に・どの通知を送るかをここで管理（LINE 社内通知）</div>
+  <div class="s">LINEの社内通知を、人ごとに「受け取る通知」だけに絞れる</div>
+  <div class="tabs" id="tabs"></div>
 </header>
 
-<div class="wrap" id="app" style="display:none">
-  <div class="hint">
-    トグルON=通知する / OFF=送らない。<b>下の「条件メモ」に文章を書くと、その人はメモ内容に沿って毎朝AIが自動でON/OFF調整</b>します（例:「金曜だけタスク通知は不要」）。メモが空の人は、上のトグルがそのまま効きます。
-  </div>
-  <div id="cards"></div>
-</div>
+<div class="wrap" id="app" style="display:none"></div>
 
 <div id="bar" style="display:none">
   <div class="inner">
@@ -124,17 +140,21 @@
 <script>
 const GAS_URL = "https://script.google.com/macros/s/AKfycby6RTCYRAmBoGa0P4QDAb0mx_NeXARoHVncQtxp2X5IXUEYW86Jy2ECS9YPqhHFvzoZ/exec";
 const CRED_KEY = "notify_creds_v1";
+const TAB_KEY  = "notify_tab_v1";
 const TYPES = [
-  { k:"call",   label:"現場呼出",   desc:"加工場に「来て」とワンタップでLINE呼出" },
-  { k:"task",   label:"タスク通知", desc:"毎朝のやること＋期限超過のリマインド" },
-  { k:"shaho",  label:"社保見越",   desc:"社保引落がズレる月の仕訳リマインド（毎月25日）" },
-  { k:"molder", label:"モルダー",   desc:"モルダー刃物の使用量が未入力のとき通知" },
-  { k:"fax",    label:"FAX未処理",  desc:"未処理のFAXが残っているときの通知" },
-  { k:"other",  label:"その他",     desc:"他ツールからの汎用のお知らせ" },
+  { k:"call",   label:"現場呼出",       desc:"加工場に「来て」の呼出LINEが届く" },
+  { k:"task",   label:"タスク通知",     desc:"毎朝のやること＋期限超過のリマインド（FAX未処理もここに含む）" },
+  { k:"mail",   label:"要返信メール",   desc:"Gmailに返信が必要そうなメールが来たら毎朝お知らせ（大樹のGmail）" },
+  { k:"hamono", label:"刃物交換",       desc:"モルダー刃物が交換目安に近づいたら朝に通知（90%でもうすぐ・100%で交換時期）" },
+  { k:"molder", label:"モルダー未入力", desc:"夕方までに刃物使用量の入力がないとき確認の通知" },
+  { k:"shaho",  label:"社保見越",       desc:"社保引落が翌月にズレる月だけ、仕訳のリマインド（毎月25日）" },
+  { k:"other",  label:"その他",         desc:"各ツールからの汎用のお知らせ" },
 ];
 const $ = id => document.getElementById(id);
-let DATA = [];      // rows from server
+let DATA = [];        // rows from server
+let CUR = localStorage.getItem(TAB_KEY) || "daiki";
 let dirty = false;
+let catalogOpen = false;
 
 /* ---------- 認証 ---------- */
 function creds(){ try{ return JSON.parse(localStorage.getItem(CRED_KEY)||"{}"); }catch(e){ return {}; } }
@@ -150,11 +170,11 @@ function submitGate(){
   if(!email || !pass){ $("gateErr").textContent="メールとパスワードを入力してください"; return; }
   saveCreds(email, pass, $("gKeep").checked);
   $("gBtn").textContent="確認中…"; $("gBtn").disabled=true;
-  load(true);
+  load();
 }
 
 /* ---------- 通信 ---------- */
-async function load(fromGate){
+async function load(){
   const c = creds();
   if(!c.pass){ showGate(""); return; }
   try{
@@ -179,7 +199,7 @@ async function save(){
   const c = creds();
   $("save").disabled=true; $("status").textContent="保存中…";
   const rows = DATA.map(r => {
-    const o = { who:r.who, master:!!r.master, memo:r.memo||"" };
+    const o = { who:r.who, master:!!r.master, memo:r.memo||"", removed:r.removed||"" };
     TYPES.forEach(t => o[t.k] = !!r[t.k]);
     return o;
   });
@@ -197,55 +217,96 @@ async function save(){
 }
 $("save").onclick = save;
 
-/* ---------- 描画 ---------- */
+/* ---------- helpers ---------- */
+const rowOf   = who => DATA.find(r => r.who === who);
+const removedSet = r => new Set(String(r.removed||"").split(",").map(s=>s.trim()).filter(Boolean));
+function setRemoved(r, set){ r.removed = [...set].join(","); }
 function setDirty(v){ dirty=v; document.body.classList.toggle("dirty", v);
   $("save").disabled = !v; $("status").textContent = v ? "未保存" : ""; }
-function render(){
-  const box = $("cards"); box.innerHTML="";
-  DATA.forEach((r, i) => {
-    const card = document.createElement("div"); card.className="card";
-    const chips = TYPES.map(t => {
-      const on = !!r[t.k];
-      return `<div class="trow ${on?'on':'off'}" data-i="${i}" data-k="${t.k}">
-                <span class="dot"></span>
-                <div class="tmeta"><div class="tname">${t.label}</div><div class="tdesc">${t.desc}</div></div>
-                <span class="tstate">${on?'ON':'OFF'}</span></div>`;
-    }).join("");
-    const applied = (r.applied && String(r.applied).trim())
-      ? `<div class="applied show">🤖 ${escapeHtml(String(r.applied))}</div>` : "";
-    card.innerHTML = `
-      <div class="chead">
-        <div class="who">${escapeHtml(r.name||r.who)}<small>${r.master?'通知ON':'すべて停止中'}</small></div>
-        <label class="sw"><input type="checkbox" data-master="${i}" ${r.master?'checked':''}><span class="t"></span></label>
-      </div>
-      <div class="types ${r.master?'':'master-off'}" data-types="${i}">${chips}</div>
-      <div class="memo-l"><span>条件メモ（自由文・毎朝AIが反映）</span></div>
-      <textarea data-memo="${i}" placeholder="例）今週は楓さんのタスク通知は不要 ／ 金曜は現場呼出だけでいい">${escapeHtml(r.memo||"")}</textarea>
-      ${applied}`;
-    box.appendChild(card);
-  });
-  // handlers
-  box.querySelectorAll(".trow").forEach(el => el.onclick = () => {
-    const i = +el.dataset.i, k = el.dataset.k;
-    if(!DATA[i].master) return;         // マスターOFF中は種別いじれない
-    DATA[i][k] = !DATA[i][k]; setDirty(true); render();
-  });
-  box.querySelectorAll("[data-master]").forEach(el => el.onchange = () => {
-    const i = +el.dataset.master; DATA[i].master = el.checked; setDirty(true); render();
-  });
-  box.querySelectorAll("[data-memo]").forEach(el => el.oninput = () => {
-    DATA[+el.dataset.memo].memo = el.value; setDirty(true);
-  });
-}
 function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 let toastT;
 function toast(m){ const t=$("toast"); t.textContent=m; t.classList.add("show"); clearTimeout(toastT);
   toastT=setTimeout(()=>t.classList.remove("show"), 1900); }
 
+/* ---------- 描画 ---------- */
+function render(){
+  // タブ
+  $("tabs").innerHTML = DATA.map(r => {
+    const act = r.who===CUR ? " act" : "";
+    const rm = removedSet(r);
+    const activeCount = TYPES.filter(t=>!rm.has(t.k)).length;
+    const mark = r.master
+      ? `<span class="on-mark">${activeCount}件</span>`
+      : `<span class="off-mark">停止中</span>`;
+    return `<div class="tab${act}" data-who="${r.who}">${escapeHtml(r.name||r.who)}${mark}</div>`;
+  }).join("");
+  document.querySelectorAll(".tab").forEach(el => el.onclick = () => {
+    CUR = el.dataset.who; localStorage.setItem(TAB_KEY, CUR); catalogOpen=false; render();
+  });
+
+  const r = rowOf(CUR);
+  if(!r){ $("app").innerHTML=""; return; }
+  const rm = removedSet(r);
+  const act = TYPES.filter(t=>!rm.has(t.k));
+  const del = TYPES.filter(t=> rm.has(t.k));
+
+  const rows = act.map(t => {
+    const on = !!r[t.k];
+    return `<div class="trow ${on?'on':'paused'}">
+      <div class="tmeta"><div class="tname">${t.label}</div><div class="tdesc">${t.desc}</div></div>
+      <label class="sw sm"><input type="checkbox" data-toggle="${t.k}" ${on?'checked':''}><span class="t"></span></label>
+      <div class="del" data-del="${t.k}" title="この通知を外す">✕</div>
+    </div>`;
+  }).join("") || `<div class="cat show"><div class="none">受け取る通知がありません。下の「＋通知を追加」から選べます</div></div>`;
+
+  const catRows = del.length ? del.map(t => `
+    <div class="crow">
+      <div class="tmeta"><div class="tname">${t.label}</div><div class="tdesc">${t.desc}</div></div>
+      <button class="add" data-add="${t.k}">追加</button>
+    </div>`).join("") : `<div class="none">追加できる通知はありません（すべて受信中）</div>`;
+
+  const applied = (r.applied && String(r.applied).trim())
+    ? `<div class="applied">🤖 ${escapeHtml(String(r.applied))}</div>` : "";
+
+  $("app").innerHTML = `
+    <div class="card">
+      <div class="mrow">
+        <div><div class="ml">${escapeHtml(r.name||r.who)}さんの通知</div>
+             <div class="ms">${r.master ? "受け取る通知だけ下に残してください" : "すべての通知を停止中です"}</div></div>
+        <label class="sw"><input type="checkbox" id="master" ${r.master?'checked':''}><span class="t"></span></label>
+      </div>
+    </div>
+    <div class="${r.master?'':'master-off'}">
+      <div class="sec-l">受け取る通知（スイッチ=一時停止 ／ ✕=一覧から外す）</div>
+      ${rows}
+      <button class="addbtn" id="addOpen">＋ 通知を追加${del.length?`（あと${del.length}種類）`:""}</button>
+      <div class="cat ${catalogOpen?'show':''}" id="catalog">${catRows}</div>
+      <div class="memo-l">条件メモ（自由文）— 書いておくと毎朝AIが読んで、その日の通知を自動調整します</div>
+      <textarea id="memo" placeholder="例）金曜はタスク通知いらない ／ 今週は呼出以外止めて">${escapeHtml(r.memo||"")}</textarea>
+      ${applied}
+    </div>`;
+
+  // handlers
+  $("master").onchange = e => { r.master = e.target.checked; setDirty(true); render(); };
+  document.querySelectorAll("[data-toggle]").forEach(el => el.onchange = () => {
+    r[el.dataset.toggle] = el.checked; setDirty(true); render();
+  });
+  document.querySelectorAll("[data-del]").forEach(el => el.onclick = () => {
+    const k = el.dataset.del; const s = removedSet(r); s.add(k); setRemoved(r, s);
+    r[k] = false; setDirty(true); render();
+  });
+  $("addOpen").onclick = () => { catalogOpen = !catalogOpen; render(); };
+  document.querySelectorAll("[data-add]").forEach(el => el.onclick = () => {
+    const k = el.dataset.add; const s = removedSet(r); s.delete(k); setRemoved(r, s);
+    r[k] = true; setDirty(true); catalogOpen = true; render();
+  });
+  $("memo").oninput = e => { r.memo = e.target.value; setDirty(true); };
+}
+
 window.addEventListener("beforeunload", e => { if(dirty){ e.preventDefault(); e.returnValue=""; } });
 
-/* 起動：保持ログインがあれば自動ログイン */
-(function(){ const c=creds(); const m=$("gMail"); if(c.email) m.value=c.email;
+/* 起動 */
+(function(){ const c=creds(); if(c.email) $("gMail").value=c.email;
   if(c.pass) load(); else showGate(""); })();
 </script>
 </body>
