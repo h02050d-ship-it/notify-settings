@@ -141,16 +141,8 @@
 const GAS_URL = "https://script.google.com/macros/s/AKfycby6RTCYRAmBoGa0P4QDAb0mx_NeXARoHVncQtxp2X5IXUEYW86Jy2ECS9YPqhHFvzoZ/exec";
 const CRED_KEY = "notify_creds_v1";
 const TAB_KEY  = "notify_tab_v1";
-const TYPES = [
-  { k:"call",   label:"現場呼出",       desc:"加工場に「来て」の呼出LINEが届く" },
-  { k:"task",   label:"タスク通知",     desc:"毎朝のやること＋期限超過のリマインド（FAX未処理もここに含む）" },
-  { k:"mail",   label:"要返信メール",   desc:"Gmailに返信が必要そうなメールが来たら毎朝お知らせ（大樹のGmail）" },
-  { k:"hamono", label:"刃物交換",       desc:"モルダー刃物が交換目安に近づいたら朝に通知（90%でもうすぐ・100%で交換時期）" },
-  { k:"molder", label:"モルダー未入力", desc:"夕方までに刃物使用量の入力がないとき確認の通知" },
-  { k:"shukka", label:"出荷通知",       desc:"内藤運輸へ送った出荷依頼の内容が控えとして届く（送信直後）" },
-  { k:"shaho",  label:"社保見越",       desc:"社保引落が翌月にズレる月だけ、仕訳のリマインド（毎月25日）" },
-  { k:"other",  label:"その他",         desc:"各ツールからの汎用のお知らせ" },
-];
+// 通知種別はサーバー（notify_types レジストリ）から取得する。load() 成功時に設定してから render。
+let TYPES = [];
 const $ = id => document.getElementById(id);
 let DATA = [];        // rows from server
 let CUR = localStorage.getItem(TAB_KEY) || "daiki";
@@ -187,6 +179,8 @@ async function load(){
       $("gBtn").textContent="ログイン"; $("gBtn").disabled=false;
       return;
     }
+    // 種別レジストリ（後方互換：旧サーバーは types を文字列配列で返す）
+    TYPES = (j.settings.types||[]).map(t => typeof t==="string" ? {k:t,label:t,desc:""} : t);
     DATA = j.settings.rows;
     hideGate(); $("app").style.display=""; $("bar").style.display="";
     render(); setDirty(false);
