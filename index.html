@@ -65,6 +65,10 @@
   .trow .tmeta{ flex:1; min-width:0; }
   .trow .tname{ font-size:14px; font-weight:700; }
   .trow .tdesc{ font-size:11.5px; color:var(--sub); margin-top:1px; line-height:1.35; }
+  .tinps{ display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
+  .tinp{ font-size:15px; padding:7px 9px; border:1.5px solid var(--line); border-radius:9px;
+         background:#fff; color:#1c2530; font-family:inherit; }
+  .tinp:focus{ outline:none; border-color:#0ea5a4; }
   .trow.on{ background:#ecfdf5; border-color:#99e5d3; }
   .trow.paused .tname{ color:var(--sub); }
   .del{ width:30px; height:30px; border:1px solid var(--line); border-radius:9px; background:#fff;
@@ -145,6 +149,7 @@ const TAB_KEY  = "notify_tab_v1";
 let TYPES = [];
 const $ = id => document.getElementById(id);
 let DATA = [];        // rows from server
+let TIMES = [];       // 通知が届く時刻（全員共通・notify_times）
 let CUR = localStorage.getItem(TAB_KEY) || "daiki";
 let dirty = false;
 let catalogOpen = false;
@@ -199,6 +204,7 @@ async function load(){
     // 種別レジストリ（後方互換：旧サーバーは types を文字列配列で返す）
     TYPES = (j.settings.types||[]).map(t => typeof t==="string" ? {k:t,label:t,desc:""} : t);
     DATA = j.settings.rows;
+    TIMES = j.settings.times || [];   // 旧サーバー（times未対応）なら時刻カードを出さない
     hideGate(); $("app").style.display=""; $("bar").style.display="";
     render(); setDirty(false);
   }catch(e){
@@ -296,7 +302,8 @@ function render(){
       <div class="memo-l">条件メモ（自由文）— 書いておくと毎朝AIが読んで、その日の通知を自動調整します</div>
       <textarea id="memo" placeholder="例）金曜はタスク通知いらない ／ 今週は呼出以外止めて">${escapeHtml(r.memo||"")}</textarea>
       ${applied}
-    </div>`;
+    </div>
+    ${timesHtml()}`;
 
   // handlers
   $("master").onchange = e => { r.master = e.target.checked; setDirty(true); render(); };
@@ -313,6 +320,53 @@ function render(){
     r[k] = true; setDirty(true); catalogOpen = true; render();
   });
   $("memo").oninput = e => { r.memo = e.target.value; setDirty(true); };
+  bindTimes();
+}
+
+/* ---------- 通知が届く時刻（全員共通・この画面だけで完結して保存） ---------- */
+function timesHtml(){
+  if(!TIMES.length) return "";
+  const rows = TIMES.map(t => {
+    const vals = String(t.time||"").split(",").map(s=>s.trim()).filter(Boolean);
+    const n = t.multi ? 3 : 1;
+    const inputs = Array.from({length:n}, (_,i) =>
+      `<input type="time" class="tinp" data-tkey="${t.key}" data-ti="${i}" value="${vals[i]||""}">`).join("");
+    const hint = t.step > 1 ? `<div class="tdesc">※設定した時刻から10分以内に届きます</div>` : "";
+    return `<div class="trow on">
+      <div class="tmeta"><div class="tname">${escapeHtml(t.label)}</div>
+        <div class="tdesc">${escapeHtml(t.desc||"")}</div>${hint}</div>
+      <div class="tinps">${inputs}</div>
+    </div>`;
+  }).join("");
+  return `<div class="sec-l" style="margin-top:22px">⏰ 通知が届く時刻（全員共通）</div>
+    ${rows}
+    <button class="addbtn" id="saveTimes">この時刻で保存</button>
+    <div class="tdesc" id="timesMsg" style="padding:6px 4px"></div>`;
+}
+function bindTimes(){
+  const btn = $("saveTimes"); if(!btn) return;
+  document.querySelectorAll(".tinp").forEach(el => el.onchange = () => {
+    const t = TIMES.find(x => x.key === el.dataset.tkey); if(!t) return;
+    const vals = String(t.time||"").split(",").map(s=>s.trim());
+    vals[Number(el.dataset.ti)] = el.value;
+    t.time = vals.filter(Boolean).join(",");
+    $("timesMsg").textContent = "未保存（「この時刻で保存」を押してください）";
+  });
+  btn.onclick = async () => {
+    const c = creds();
+    btn.disabled = true; $("timesMsg").textContent = "保存中…";
+    try{
+      const r = await fetch(GAS_URL, { method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"},
+        body: JSON.stringify({ action:"saveTimes", pass:c.pass,
+          rows: TIMES.map(t => ({ key:t.key, time:t.time })) }) });
+      const j = await r.json();
+      if(!j.ok) throw new Error(j.error||"save");
+      TIMES = j.settings.times || TIMES;   // サーバー正規化後の値で描き直す（空欄・不正入力は元に戻る）
+      render(); toast("✓ 時刻を保存しました");
+    }catch(e){
+      btn.disabled = false; $("timesMsg").textContent = "保存に失敗しました";
+    }
+  };
 }
 
 window.addEventListener("beforeunload", e => { if(dirty){ e.preventDefault(); e.returnValue=""; } });
