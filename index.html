@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0f766e">
+<link rel="preconnect" href="https://script.google.com" crossorigin>
+<link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
+<link rel="dns-prefetch" href="https://script.google.com">
 <title>社内通知 設定</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f766e'/%3E%3Ctext x='32' y='46' font-size='40' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'%3E通%3C/text%3E%3C/svg%3E">
 <style>
@@ -188,6 +191,11 @@ function submitGate(){
   load();
 }
 
+/* ---------- 起動高速化: 前回取得データを端末に保存→次回は即描画（裏で最新を取得して置き換え） ---------- */
+const SRV_CACHE_KEY = "notify_srv_cache_v1";
+function saveSrvCache(){ try{ localStorage.setItem(SRV_CACHE_KEY, JSON.stringify({ t:Date.now(), types:TYPES, rows:DATA, times:TIMES })); }catch(e){} }
+function loadSrvCache(){ try{ const c=JSON.parse(localStorage.getItem(SRV_CACHE_KEY)||"null"); return (c&&Array.isArray(c.rows)&&c.rows.length)?c:null; }catch(e){ return null; } }
+
 /* ---------- 通信 ---------- */
 async function load(){
   const c = creds();
@@ -201,13 +209,19 @@ async function load(){
       $("gBtn").textContent="ログイン"; $("gBtn").disabled=false;
       return;
     }
+    hideGate();
+    // キャッシュ表示中に編集を始めていたら、遅れて届いた最新データで上書きしない（保存すればサーバーに反映される）
+    if(dirty){ return; }
     // 種別レジストリ（後方互換：旧サーバーは types を文字列配列で返す）
     TYPES = (j.settings.types||[]).map(t => typeof t==="string" ? {k:t,label:t,desc:""} : t);
     DATA = j.settings.rows;
     TIMES = j.settings.times || [];   // 旧サーバー（times未対応）なら時刻カードを出さない
-    hideGate(); $("app").style.display=""; $("bar").style.display="";
+    saveSrvCache();
+    $("app").style.display=""; $("bar").style.display="";
     render(); setDirty(false);
   }catch(e){
+    // キャッシュ表示中なら画面は維持して通知だけ（ゲートに戻さない）
+    if($("app").style.display!=="none"){ toast("最新データを取得できませんでした（前回データを表示中）"); return; }
     showGate("接続できませんでした。通信環境を確認してください");
     $("gBtn").textContent="ログイン"; $("gBtn").disabled=false;
   }
@@ -373,7 +387,16 @@ window.addEventListener("beforeunload", e => { if(dirty){ e.preventDefault(); e.
 
 /* 起動 */
 (function(){ const c=creds(); if(c.email) $("gMail").value=c.email;
-  if(c.pass) load(); else showGate(""); })();
+  if(c.pass){
+    // 前回データがあれば即描画（ゲートを閉じて表示）→裏で最新を取得
+    const cache = loadSrvCache();
+    if(cache){
+      TYPES = cache.types||[]; DATA = cache.rows; TIMES = cache.times||[];
+      hideGate(); $("app").style.display=""; $("bar").style.display="";
+      render(); setDirty(false);
+    }
+    load();
+  } else showGate(""); })();
 </script>
 </body>
 </html>
